@@ -169,11 +169,84 @@ def run(
         if routed:
             sources = fio.normalize_exposure(sources)
 
+    # if debug_dir:
+    #     os.makedirs(debug_dir, exist_ok=True)
+    #     for name, img in zip(names, images):
+    #         stem = os.path.splitext(name)[0]
+    #         fio.save_image(os.path.join(debug_dir, f"aligned_{stem}.png"), img)
+
     if debug_dir:
         os.makedirs(debug_dir, exist_ok=True)
         for name, img in zip(names, images):
             stem = os.path.splitext(name)[0]
-            fio.save_image(os.path.join(debug_dir, f"aligned_{stem}.png"), img)
+            # fio.save_image(os.path.join(debug_dir, f"aligned_{stem}.png"), img)
+
+        # Export per-frame focus maps
+        fmaps = _focus_maps(images, focus_method)
+
+        for name, fm in zip(names, fmaps):
+            stem = os.path.splitext(name)[0]
+
+            # # Raw focus map
+            # np.save(
+            #     os.path.join(debug_dir, f"focus_{stem}.npy"),
+            #     fm,
+            # )
+
+            # Visualization of raw focus map
+            fio.save_image(
+                os.path.join(debug_dir, f"focus_{stem}.png"),
+                _normalize_map(fm),
+            )
+
+        # Stack focus maps: N x H x W
+        focus_stack = np.stack(fmaps, axis=0)
+
+        # Which frame has the highest focus score at each pixel?
+        best_frame = np.argmax(focus_stack, axis=0)
+
+        # Best and second-best focus scores
+        sorted_scores = np.sort(focus_stack, axis=0)
+        best_score = sorted_scores[-1]
+
+        if len(fmaps) > 1:
+            second_score = sorted_scores[-2]
+        else:
+            second_score = np.zeros_like(best_score)
+
+        # Relative separation between best and second-best frame
+        focus_confidence = (
+            (best_score - second_score)
+            / (best_score + 1e-6)
+        ).astype(np.float32)
+
+        # # Save raw selection map
+        # np.save(
+        #     os.path.join(debug_dir, "focus_selection.npy"),
+        #     best_frame,
+        # )
+
+        # # Save raw confidence map
+        # np.save(
+        #     os.path.join(debug_dir, "focus_confidence.npy"),
+        #     focus_confidence,
+        # )
+
+        # Create one binary focus mask for each input frame
+        for i, name in enumerate(names):
+            stem = os.path.splitext(name)[0]
+
+            mask = (best_frame == i).astype(np.uint8) * 255
+
+            fio.save_image(
+                os.path.join(debug_dir, f"focus_mask_{stem}.png"),
+                mask,
+            )
+
+            # np.save(
+            #     os.path.join(debug_dir, f"focus_mask_{stem}.npy"),
+            #     mask,
+            # )
 
     twoframe_fused = None
     if routed:
