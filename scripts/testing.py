@@ -1,6 +1,7 @@
+
 from pathlib import Path
 
-from src.focusstack.pipeline import run
+from focusstack.pipeline import run
 
 import cv2
 import pandas as pd
@@ -35,17 +36,17 @@ dfs = []
 for batch_dir in base_meta_dir.iterdir():
     if batch_dir.is_dir() and batch_dir.name.startswith("batch"):
         path = batch_dir / "img" / "source.txt"
-
         df_batch = pd.read_csv(path, header = None)
         df_batch["batch_id"] = batch_dir.name
-        df_batch["filename"] = df_batch[0].apply(lambda x: Path(x).name)
-
+        df_batch["filename"] = df_batch[0].astype(str).str.replace("\\", "/", regex=False).str.split("/").str[-1]        
         dfs.append(df_batch)
 df = pd.concat(dfs, ignore_index=True)
 
 # iterate over all image directories
 img_dirs = sorted([d for d in base_dir.iterdir() if d.is_dir()])
 for img_dir in img_dirs:
+
+    print("Processing " + str(img_dir))
 
     # directories
     stack_dir = img_dir
@@ -57,19 +58,19 @@ for img_dir in img_dirs:
     # find input images
     inputs = sorted(stack_dir.glob("*.JPG"))
 
-    # Run focus stacking
-    run(
-        inputs=[str(path) for path in inputs],
-        output=str(
-            out_dir / "stacked_noalign.png"
-        ),
-        method="perband",
-        align=False,
-        focus_method="content_aware",
-        normalize_exposure=False,
-        debug_dir=str(debug_dir),
-        verbose=True,
-    )
+    # # Run focus stacking
+    # run(
+    #     inputs=[str(path) for path in inputs],
+    #     output=str(
+    #         out_dir / "stacked_noalign.png"
+    #     ),
+    #     method="perband",
+    #     align=False,
+    #     focus_method="content_aware",
+    #     normalize_exposure=False,
+    #     debug_dir=str(debug_dir),
+    #     verbose=True,
+    # )
 
     # Get all JPG images in the directory and sort them
     images = sorted(

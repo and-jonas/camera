@@ -1,0 +1,14 @@
+NODE: ags-sch-3053
+PORT: 53897
+HOME: /home/f89601470
+Processing /agroscope/Data-Work-CH/22_Plant_Production-CH/224_Digitalisation/Jonas_Anderegg_Files/B_Data/04_DL_datasets_updates/focus/focus_stacks/0Y1A0083
+Processing /agroscope/Data-Work-CH/22_Plant_Production-CH/224_Digitalisation/Jonas_Anderegg_Files/B_Data/04_DL_datasets_updates/focus/focus_stacks/0Y1A0605
+Processing /agroscope/Data-Work-CH/22_Plant_Production-CH/224_Digitalisation/Jonas_Anderegg_Files/B_Data/04_DL_datasets_updates/focus/focus_stacks/0Y1A0706
+Processing /agroscope/Data-Work-CH/22_Plant_Production-CH/224_Digitalisation/Jonas_Anderegg_Files/B_Data/04_DL_datasets_updates/focus/focus_stacks/0Y1A5866
+Processing /agroscope/Data-Work-CH/22_Plant_Production-CH/224_Digitalisation/Jonas_Anderegg_Files/B_Data/04_DL_datasets_updates/focus/focus_stacks/0Y1A5974
+Processing /agroscope/Data-Work-CH/22_Plant_Production-CH/224_Digitalisation/Jonas_Anderegg_Files/B_Data/04_DL_datasets_updates/focus/focus_stacks/0Y1A6100
+Traceback (most recent call last):
+  File "/home/f89601470/camera-repo2/scripts/testing.py", line 99, in <module>
+    mask = cv2.imread(str(focus_masks[i]), cv2.IMREAD_COLOR)
+                          ~~~~~~~~~~~^^^
+IndexError: list index out of range
