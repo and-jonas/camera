@@ -39,7 +39,6 @@ img_dirs = sorted([d for d in base_dir.iterdir() if d.is_dir()])
 for img_dir in img_dirs:
 
     # directories
-    print(f"Processing stack: {img_dir.name}")
     stack_dir = img_dir
     out_dir = stack_dir / "out"
     debug_dir = stack_dir / "debug_noalign"
@@ -48,9 +47,6 @@ for img_dir in img_dirs:
 
     # find input images
     inputs = sorted(stack_dir.glob("*.JPG"))
-    print("Input images:")
-    for path in inputs:
-        print(f"  {path.name}")
 
     # Run focus stacking
     run(
@@ -90,7 +86,6 @@ for img_dir in img_dirs:
     masks = []
     if image_idx not in (1, 15):
         for i in range(image_idx-1, image_idx + 1 + 1):
-            print("Mask " +  str(i))
             mask = cv2.imread(str(focus_masks[i]), cv2.IMREAD_COLOR)
             mask = cv2.medianBlur(mask, 21)
             masks.append(mask)
@@ -146,10 +141,10 @@ for img_dir in img_dirs:
         + overlay_colour2 * alpha
     ).astype(np.uint8)
 
-    plt.figure(figsize=(16, 10))
-    plt.imshow(result)
-    plt.axis("off")
-    plt.show()
+    # plt.figure(figsize=(16, 10))
+    # plt.imshow(result)
+    # plt.axis("off")
+    # plt.show()
 
     # crop to the annotation patch
     batch_id = df.loc[df["filename"] == filename, "batch_id"].iloc[0]
