@@ -169,12 +169,6 @@ def run(
         if routed:
             sources = fio.normalize_exposure(sources)
 
-    # if debug_dir:
-    #     os.makedirs(debug_dir, exist_ok=True)
-    #     for name, img in zip(names, images):
-    #         stem = os.path.splitext(name)[0]
-    #         fio.save_image(os.path.join(debug_dir, f"aligned_{stem}.png"), img)
-
     if debug_dir:
         os.makedirs(debug_dir, exist_ok=True)
         for name, img in zip(names, images):
@@ -248,122 +242,122 @@ def run(
             #     mask,
             # )
 
-    twoframe_fused = None
-    if routed:
-        # The two-frame path is align AND fuse in one: it elects a frame pair per
-        # region, warps each member by one rigid transform, fuses the pair, and
-        # stitches. It therefore replaces both stages above for this stack; the
-        # shipped alignment above still ran, and its report is what routed here.
-        from .twoframe import fuse_twoframe
+    # twoframe_fused = None
+    # if routed:
+    #     # The two-frame path is align AND fuse in one: it elects a frame pair per
+    #     # region, warps each member by one rigid transform, fuses the pair, and
+    #     # stitches. It therefore replaces both stages above for this stack; the
+    #     # shipped alignment above still ran, and its report is what routed here.
+    #     from .twoframe import fuse_twoframe
 
-        log("building the two-frame composite ...")
-        twoframe_fused, tf_report = fuse_twoframe(sources, harden=harden)
-        log(f"two-frame: pairs {tf_report['pairs']}, frames used "
-            f"{tf_report['frames_used']} of {len(sources)}, "
-            f"{tf_report['refusals']} layer(s) refused by the validity gate, "
-            f"largest layer shift {tf_report['max_layer_shift']:.1f} px "
-            f"(licence {tf_report['shift_licence']:.1f} px)")
-        # SECOND HALF OF THE ROUTING RULE. A composite that had to translate an
-        # elected layer further than the arc's refinement scale is re-registering,
-        # not refining — the regime F109 named in advance as this architecture's
-        # failure case, and the one where its own disocclusion refusal withdraws
-        # the very member it elected (measured on large-motion: the sharp,
-        # correctly-fitted playing-card box is withdrawn over 91% of its pair and
-        # comes back reference-defocused). The composite is discarded and the
-        # shipped output stands.
-        routed = bool(tf_report["within_licence"])
-        if not routed:
-            twoframe_fused = None
-            log("fusion path: shipped depth-bin — the two-frame composite was "
-                "built and DECLINED: it had to re-register a layer beyond the "
-                "refinement scale, where its own refusal withdraws the object it "
-                "was serving")
+    #     log("building the two-frame composite ...")
+    #     twoframe_fused, tf_report = fuse_twoframe(sources, harden=harden)
+    #     log(f"two-frame: pairs {tf_report['pairs']}, frames used "
+    #         f"{tf_report['frames_used']} of {len(sources)}, "
+    #         f"{tf_report['refusals']} layer(s) refused by the validity gate, "
+    #         f"largest layer shift {tf_report['max_layer_shift']:.1f} px "
+    #         f"(licence {tf_report['shift_licence']:.1f} px)")
+    #     # SECOND HALF OF THE ROUTING RULE. A composite that had to translate an
+    #     # elected layer further than the arc's refinement scale is re-registering,
+    #     # not refining — the regime F109 named in advance as this architecture's
+    #     # failure case, and the one where its own disocclusion refusal withdraws
+    #     # the very member it elected (measured on large-motion: the sharp,
+    #     # correctly-fitted playing-card box is withdrawn over 91% of its pair and
+    #     # comes back reference-defocused). The composite is discarded and the
+    #     # shipped output stands.
+    #     routed = bool(tf_report["within_licence"])
+    #     if not routed:
+    #         twoframe_fused = None
+    #         log("fusion path: shipped depth-bin — the two-frame composite was "
+    #             "built and DECLINED: it had to re-register a layer beyond the "
+    #             "refinement scale, where its own refusal withdraws the object it "
+    #             "was serving")
 
-    if routed:
-        log("fusion path: TWO-FRAME — a stranded object, served within the "
-            "architecture's displacement licence")
-        fused = twoframe_fused
-    elif method == "max":
-        log(f"computing focus maps (measure={focus_method}) ...")
-        fmaps = _focus_maps(images, focus_method)
-        log("fusing (per-pixel maximum sharpness) ...")
-        fused, index_map = fuse_max(images, fmaps)
-        if debug_dir:
-            for name, fm in zip(names, fmaps):
-                stem = os.path.splitext(name)[0]
-                fio.save_image(os.path.join(debug_dir, f"focus_{stem}.png"), _normalize_map(fm))
-            fio.save_image(
-                os.path.join(debug_dir, "selection.png"),
-                _colorize_selection(index_map, len(images)),
-            )
-    elif method == "pyramid":
-        log("fusing (Laplacian pyramid) ...")
-        fused = fuse_pyramid(images, levels=levels)
-        if debug_dir:
-            # Focus maps aren't used by the pyramid method, but dump them anyway
-            # so the sharpness of each frame is visible alongside the result.
-            for name, fm in zip(names, _focus_maps(images, focus_method)):
-                stem = os.path.splitext(name)[0]
-                fio.save_image(os.path.join(debug_dir, f"focus_{stem}.png"), _normalize_map(fm))
-    elif method == "decision":
-        log("fusing (guided-filter decision map) ...")
-        fused, weights = fuse_decision(images, focus_method=focus_method, harden=harden,
-                                       weight_scale=weight_scale, return_weights=True)
-        if debug_dir:
-            # The refined per-frame weight maps are the heart of this method —
-            # dump them so the (clean, edge-aligned) selection is visible.
-            for name, wmap in zip(names, weights):
-                stem = os.path.splitext(name)[0]
-                fio.save_image(os.path.join(debug_dir, f"weight_{stem}.png"), _normalize_map(wmap))
-    elif method == "blend":
-        log("fusing (guided multi-band blend) ...")
-        fused, weights = fuse_blend(
-            images, focus_method=focus_method, levels=levels, harden=harden,
-            weight_scale=weight_scale, return_weights=True
-        )
-        if debug_dir:
-            for name, wmap in zip(names, weights):
-                stem = os.path.splitext(name)[0]
-                fio.save_image(os.path.join(debug_dir, f"weight_{stem}.png"), _normalize_map(wmap))
-    elif method == "perband":
-        log("fusing (per-band edge-aware) ...")
-        fused = fuse_perband(images, harden=harden, usable=usable)
-    else:
-        raise ValueError(
-            f"Unknown method {method!r}; use 'blend', 'perband', 'decision', 'pyramid', or 'max'."
-        )
+    # if routed:
+    #     log("fusion path: TWO-FRAME — a stranded object, served within the "
+    #         "architecture's displacement licence")
+    #     fused = twoframe_fused
+    # elif method == "max":
+    #     log(f"computing focus maps (measure={focus_method}) ...")
+    #     fmaps = _focus_maps(images, focus_method)
+    #     log("fusing (per-pixel maximum sharpness) ...")
+    #     fused, index_map = fuse_max(images, fmaps)
+    #     if debug_dir:
+    #         for name, fm in zip(names, fmaps):
+    #             stem = os.path.splitext(name)[0]
+    #             fio.save_image(os.path.join(debug_dir, f"focus_{stem}.png"), _normalize_map(fm))
+    #         fio.save_image(
+    #             os.path.join(debug_dir, "selection.png"),
+    #             _colorize_selection(index_map, len(images)),
+    #         )
+    # elif method == "pyramid":
+    #     log("fusing (Laplacian pyramid) ...")
+    #     fused = fuse_pyramid(images, levels=levels)
+    #     if debug_dir:
+    #         # Focus maps aren't used by the pyramid method, but dump them anyway
+    #         # so the sharpness of each frame is visible alongside the result.
+    #         for name, fm in zip(names, _focus_maps(images, focus_method)):
+    #             stem = os.path.splitext(name)[0]
+    #             fio.save_image(os.path.join(debug_dir, f"focus_{stem}.png"), _normalize_map(fm))
+    # elif method == "decision":
+    #     log("fusing (guided-filter decision map) ...")
+    #     fused, weights = fuse_decision(images, focus_method=focus_method, harden=harden,
+    #                                    weight_scale=weight_scale, return_weights=True)
+    #     if debug_dir:
+    #         # The refined per-frame weight maps are the heart of this method —
+    #         # dump them so the (clean, edge-aligned) selection is visible.
+    #         for name, wmap in zip(names, weights):
+    #             stem = os.path.splitext(name)[0]
+    #             fio.save_image(os.path.join(debug_dir, f"weight_{stem}.png"), _normalize_map(wmap))
+    # elif method == "blend":
+    #     log("fusing (guided multi-band blend) ...")
+    #     fused, weights = fuse_blend(
+    #         images, focus_method=focus_method, levels=levels, harden=harden,
+    #         weight_scale=weight_scale, return_weights=True
+    #     )
+    #     if debug_dir:
+    #         for name, wmap in zip(names, weights):
+    #             stem = os.path.splitext(name)[0]
+    #             fio.save_image(os.path.join(debug_dir, f"weight_{stem}.png"), _normalize_map(wmap))
+    # elif method == "perband":
+    #     log("fusing (per-band edge-aware) ...")
+    #     fused = fuse_perband(images, harden=harden, usable=usable)
+    # else:
+    #     raise ValueError(
+    #         f"Unknown method {method!r}; use 'blend', 'perband', 'decision', 'pyramid', or 'max'."
+    #     )
 
-    if enhance == "auto" and method == "perband" and routed:
-        # F56 licenses the enhance specialists for the fused output of frames the
-        # caller can point at; a stitched per-region composite is not that, and
-        # the licence does not transfer. Skipped rather than silently applied.
-        log("enhance: skipped on the two-frame route (not licensed for a "
-            "stitched composite)")
-    elif enhance == "auto" and method == "perband":
-        from .enhance import enhance as _enhance
-        fused, rep = _enhance(images, fused, harden=harden, log=log)
-        if rep["veil_fired"] or rep["recon_fired"]:
-            log(f"enhance: veil={rep['veil_fired']} recon={rep['recon_fired']} "
-                f"(bridge={'yes' if rep['bridge'] else 'no'})")
+    # if enhance == "auto" and method == "perband" and routed:
+    #     # F56 licenses the enhance specialists for the fused output of frames the
+    #     # caller can point at; a stitched per-region composite is not that, and
+    #     # the licence does not transfer. Skipped rather than silently applied.
+    #     log("enhance: skipped on the two-frame route (not licensed for a "
+    #         "stitched composite)")
+    # elif enhance == "auto" and method == "perband":
+    #     from .enhance import enhance as _enhance
+    #     fused, rep = _enhance(images, fused, harden=harden, log=log)
+    #     if rep["veil_fired"] or rep["recon_fired"]:
+    #         log(f"enhance: veil={rep['veil_fired']} recon={rep['recon_fired']} "
+    #             f"(bridge={'yes' if rep['bridge'] else 'no'})")
 
-    if reconstruct_boundaries:
-        from .reconstruct import reconstruct_boundaries as _recon
-        log("reconstructing boundary bands (experimental) ...")
-        fused = _recon(images, fused)
+    # if reconstruct_boundaries:
+    #     from .reconstruct import reconstruct_boundaries as _recon
+    #     log("reconstructing boundary bands (experimental) ...")
+    #     fused = _recon(images, fused)
 
-    if boundary_out:
-        from .reconstruct import stack_boundary
-        log("computing stack boundary map ...")
-        b = stack_boundary(images)
-        fio.save_image(boundary_out, (np.clip(b, 0, 1) * 255.0).astype(np.uint8))
-        log(f"wrote boundary map {boundary_out}")
+    # if boundary_out:
+    #     from .reconstruct import stack_boundary
+    #     log("computing stack boundary map ...")
+    #     b = stack_boundary(images)
+    #     fio.save_image(boundary_out, (np.clip(b, 0, 1) * 255.0).astype(np.uint8))
+    #     log(f"wrote boundary map {boundary_out}")
 
-    if depth_out:
-        log("computing depth-from-focus map ...")
-        d = depth_from_focus(images, focus_method=focus_method)
-        fio.save_image(depth_out, (d * 255.0).astype(np.uint8))
-        log(f"wrote depth map {depth_out}")
+    # if depth_out:
+    #     log("computing depth-from-focus map ...")
+    #     d = depth_from_focus(images, focus_method=focus_method)
+    #     fio.save_image(depth_out, (d * 255.0).astype(np.uint8))
+    #     log(f"wrote depth map {depth_out}")
 
-    fio.save_image(output, fused)
-    log(f"wrote {output}")
-    return fused
+    # fio.save_image(output, fused)
+    # log(f"wrote {output}")
+    # return fused
