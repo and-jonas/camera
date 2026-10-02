@@ -12,16 +12,25 @@ import matplotlib.pyplot as plt
 # Input / output
 # ---------------------------------------------------------------------
 
-base_dir  = Path(
-    r"O:/Data-Work/22_Plant_Production-CH/224_Digitalisation"
-    r"/Jonas_Anderegg_Files/B_Data/04_DL_datasets_updates/focus/focus_stacks"
+# determine which root path to use based on existence of local or server path
+ROOT_LOCAL = Path(
+    "O:/Data-Work/22_Plant_Production-CH/224_Digitalisation"
+    "/Jonas_Anderegg_Files/B_Data/04_DL_datasets_updates"
 )
+ROOT_SERVER = Path(
+    "/agroscope/Data-Work-CH/22_Plant_Production-CH/224_Digitalisation"
+    "/Jonas_Anderegg_Files/B_Data/04_DL_datasets_updates"
+)
+if ROOT_LOCAL.exists():
+    ROOT = ROOT_LOCAL
+elif ROOT_SERVER.exists():
+    ROOT = ROOT_SERVER
+else:
+    raise FileNotFoundError("Could not find root directory.")
 
-# get batch image metadata  
-base_meta_dir = Path(
-    r"O:/Data-Work/22_Plant_Production-CH/224_Digitalisation"
-    r"/Jonas_Anderegg_Files/B_Data/04_DL_datasets_updates/symptoms"
-)
+base_dir  = Path(ROOT / "focus/focus_stacks")
+base_meta_dir = Path(ROOT / "symptoms")
+
 dfs = []
 for batch_dir in base_meta_dir.iterdir():
     if batch_dir.is_dir() and batch_dir.name.startswith("batch"):
