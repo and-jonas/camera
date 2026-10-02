@@ -94,21 +94,17 @@ for img_dir in img_dirs[6:]:
 
     # get relevant focus masks
     masks = []
-    if image_idx not in (1, 15):
-        for i in range(image_idx-1, image_idx + 1 + 1):
-            mask = cv2.imread(str(focus_masks[i]), cv2.IMREAD_COLOR)
-            mask = cv2.medianBlur(mask, 21)
-            masks.append(mask)
-    elif image_idx == 15:
-        for i in range(image_idx-1, image_idx + 1):
-            mask = cv2.imread(str(focus_masks[i]), cv2.IMREAD_COLOR)
-            mask = cv2.medianBlur(mask, 21)
-            masks.append(mask)
-    elif image_idx == 1:
-        for i in range(image_idx, image_idx + 1 + 1):
-            mask = cv2.imread(str(focus_masks[i]), cv2.IMREAD_COLOR)
-            mask = cv2.medianBlur(mask, 21)
-            masks.append(mask)
+    if image_idx == 0:
+        mask_indices = range(0, 2)
+    elif image_idx == 14:
+        mask_indices = range(13, 15)
+    else:
+        mask_indices = range(image_idx - 1, image_idx + 2)
+
+    for i in mask_indices:
+        mask = cv2.imread(str(focus_masks[i]), cv2.IMREAD_COLOR)
+        mask = cv2.medianBlur(mask, 21)
+        masks.append(mask)
 
     # get image
     img = cv2.imread(images[image_idx], cv2.IMREAD_COLOR)
@@ -123,8 +119,15 @@ for img_dir in img_dirs[6:]:
     alpha = 1
 
     # combined focus masks
-    focus1 = masks[1] > 0
-    focus2 = (masks[0] > 0) | (masks[2] > 0)
+    if image_idx == 0:
+        focus1 = masks[1] > 0
+        focus2 = masks[0] > 0   
+    elif image_idx == 14:
+        focus1 = masks[0] > 0
+        focus2 = masks[1] > 0
+    else:
+        focus1 = masks[1] > 0
+        focus2 = (masks[0] > 0) | (masks[2] > 0)
 
     # change to grid points
     grid_spacing = 20
@@ -161,10 +164,10 @@ for img_dir in img_dirs[6:]:
         + overlay_colour2 * alpha
     ).astype(np.uint8)
 
-    # plt.figure(figsize=(16, 10))
-    # plt.imshow(result)
-    # plt.axis("off")
-    # plt.show()
+    plt.figure(figsize=(16, 10))
+    plt.imshow(result)
+    plt.axis("off")
+    plt.show()
 
     # crop to the annotation patch
     batch_id = df.loc[df["filename"] == filename, "batch_id"].iloc[0]
