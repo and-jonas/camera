@@ -44,7 +44,7 @@ df = pd.concat(dfs, ignore_index=True)
 
 # iterate over all image directories
 img_dirs = sorted([d for d in base_dir.iterdir() if d.is_dir()])
-for img_dir in img_dirs:
+for img_dir in img_dirs[6:]:
 
     print("Processing " + str(img_dir))
 
@@ -96,6 +96,16 @@ for img_dir in img_dirs:
     masks = []
     if image_idx not in (1, 15):
         for i in range(image_idx-1, image_idx + 1 + 1):
+            mask = cv2.imread(str(focus_masks[i]), cv2.IMREAD_COLOR)
+            mask = cv2.medianBlur(mask, 21)
+            masks.append(mask)
+    elif image_idx == 15:
+        for i in range(image_idx-1, image_idx + 1):
+            mask = cv2.imread(str(focus_masks[i]), cv2.IMREAD_COLOR)
+            mask = cv2.medianBlur(mask, 21)
+            masks.append(mask)
+    elif image_idx == 1:
+        for i in range(image_idx, image_idx + 1 + 1):
             mask = cv2.imread(str(focus_masks[i]), cv2.IMREAD_COLOR)
             mask = cv2.medianBlur(mask, 21)
             masks.append(mask)
