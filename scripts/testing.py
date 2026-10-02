@@ -58,19 +58,19 @@ for img_dir in img_dirs:
     # find input images
     inputs = sorted(stack_dir.glob("*.JPG"))
 
-    # # Run focus stacking
-    # run(
-    #     inputs=[str(path) for path in inputs],
-    #     output=str(
-    #         out_dir / "stacked_noalign.png"
-    #     ),
-    #     method="perband",
-    #     align=False,
-    #     focus_method="content_aware",
-    #     normalize_exposure=False,
-    #     debug_dir=str(debug_dir),
-    #     verbose=True,
-    # )
+    # Run focus stacking
+    run(
+        inputs=[str(path) for path in inputs],
+        output=str(
+            out_dir / "stacked_noalign.png"
+        ),
+        method="perband",
+        align=False,
+        focus_method="content_aware",
+        normalize_exposure=False,
+        debug_dir=str(debug_dir),
+        verbose=True,
+    )
 
     # Get all JPG images in the directory and sort them
     images = sorted(
