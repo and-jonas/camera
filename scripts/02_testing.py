@@ -44,7 +44,7 @@ df = pd.concat(dfs, ignore_index=True)
 
 # iterate over all image directories
 img_dirs = sorted([d for d in base_dir.iterdir() if d.is_dir()])
-for img_dir in img_dirs[6:]:
+for img_dir in img_dirs[34:]:
 
     print("Processing " + str(img_dir))
 
@@ -164,10 +164,10 @@ for img_dir in img_dirs[6:]:
         + overlay_colour2 * alpha
     ).astype(np.uint8)
 
-    plt.figure(figsize=(16, 10))
-    plt.imshow(result)
-    plt.axis("off")
-    plt.show()
+    # plt.figure(figsize=(16, 10))
+    # plt.imshow(result)
+    # plt.axis("off")
+    # plt.show()
 
     # crop to the annotation patch
     batch_id = df.loc[df["filename"] == filename, "batch_id"].iloc[0]
