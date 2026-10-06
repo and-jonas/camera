@@ -1,15 +1,14 @@
 from pathlib import Path
-
-import cv2
-
 import re
 import shutil
+
+batch = "batch2"
 
 
 # copy the patches with overlay for visual confirmation of congruency
 ROOT = Path(
     "O:/Data-Work/22_Plant_Production-CH/224_Digitalisation"
-    "/Jonas_Anderegg_Files/B_Data/04_DL_datasets_updates/focus/focus_stacks"
+    "/Jonas_Anderegg_Files/B_Data/04_DL_datasets_updates/focus" / batch / "focus_stacks"
 )
 DIRS = sorted([d / "out" for d in ROOT.iterdir() if d.is_dir() and re.fullmatch(r"[A-Za-z0-9]{8}", d.name)])
 
@@ -36,7 +35,7 @@ for dir in DIRS:
 # copy the patches with overlay for CVAT upload
 ROOT = Path(
     "O:/Data-Work/22_Plant_Production-CH/224_Digitalisation"
-    "/Jonas_Anderegg_Files/B_Data/04_DL_datasets_updates/focus/focus_stacks"
+    "/Jonas_Anderegg_Files/B_Data/04_DL_datasets_updates/focus" / batch / "focus_stacks"
 )
 DIRS = sorted([d / "out" for d in ROOT.iterdir() if d.is_dir() and re.fullmatch(r"[A-Za-z0-9]{8}", d.name)])
 
