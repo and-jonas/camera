@@ -1,5 +1,4 @@
 from pathlib import Path
-from tkinter import Image
 import pandas as pd
 import shutil
 
@@ -49,15 +48,21 @@ def copy_image_block(image_path, block_size=15):
     )
 
 
-# Example
+# # fetch stacks batch1
+# OUTPUT_ROOT = Path(
+#     r"O:/Data-Work/22_Plant_Production-CH/224_Digitalisation"
+#     r"/Jonas_Anderegg_Files/B_Data/04_DL_datasets_updates/focus/batch1/focus_stacks"
+# )
+# img_paths = pd.read_csv(r"O:/Data-Work/22_Plant_Production-CH/224_Digitalisation/Jonas_Anderegg_Files/B_Data/04_DL_datasets_updates/focus/batch1/src.txt", header=None)[0].tolist()
+# for image_path in img_paths:
+#     copy_image_block(image_path)
 
+# fetch stacks batch2
 OUTPUT_ROOT = Path(
     r"O:/Data-Work/22_Plant_Production-CH/224_Digitalisation"
-    r"/Jonas_Anderegg_Files/B_Data/04_DL_datasets_updates/focus/focus_stacks"
+    r"/Jonas_Anderegg_Files/B_Data/04_DL_datasets_updates/focus/batch2/focus_stacks"
 )
 
-img_paths = pd.read_csv(r"O:/Data-Work/22_Plant_Production-CH/224_Digitalisation/Jonas_Anderegg_Files/B_Data/04_DL_datasets_updates/focus/src.txt", header=None)[0].tolist()
-
+img_paths = pd.read_csv(r"O:/Data-Work/22_Plant_Production-CH/224_Digitalisation/Jonas_Anderegg_Files/B_Data/04_DL_datasets_updates/focus/batch2/src.txt", header=None)[0].tolist()
 for image_path in img_paths:
     copy_image_block(image_path)
-
