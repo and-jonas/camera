@@ -13,6 +13,9 @@ import matplotlib.pyplot as plt
 # Input / output
 # ---------------------------------------------------------------------
 
+# determine which batch to process
+batch = "batch2"
+
 # determine which root path to use based on existence of local or server path
 ROOT_LOCAL = Path(
     "O:/Data-Work/22_Plant_Production-CH/224_Digitalisation"
@@ -29,9 +32,10 @@ elif ROOT_SERVER.exists():
 else:
     raise FileNotFoundError("Could not find root directory.")
 
-base_dir  = Path(ROOT / "focus/focus_stacks")
+base_dir  = Path(ROOT / "focus" / batch / "focus_stacks")
 base_meta_dir = Path(ROOT / "symptoms")
 
+# all patches
 dfs = []
 for batch_dir in base_meta_dir.iterdir():
     if batch_dir.is_dir() and batch_dir.name.startswith("batch"):
@@ -44,7 +48,7 @@ df = pd.concat(dfs, ignore_index=True)
 
 # iterate over all image directories
 img_dirs = sorted([d for d in base_dir.iterdir() if d.is_dir()])
-for img_dir in img_dirs[34:]:
+for img_dir in img_dirs:
 
     print("Processing " + str(img_dir))
 
@@ -61,9 +65,7 @@ for img_dir in img_dirs[34:]:
     # Run focus stacking
     run(
         inputs=[str(path) for path in inputs],
-        output=str(
-            out_dir / "stacked_noalign.png"
-        ),
+        output=str(out_dir / "stacked_noalign.png"),
         method="perband",
         align=False,
         focus_method="content_aware",
@@ -73,15 +75,11 @@ for img_dir in img_dirs[34:]:
     )
 
     # Get all JPG images in the directory and sort them
-    images = sorted(
-        [p for p in img_dir.iterdir() if p.is_file() and p.suffix.lower() in {".jpg", ".jpeg"}]
-    )
+    images = sorted([p for p in img_dir.iterdir() if p.is_file() and p.suffix.lower() in {".jpg", ".jpeg"}])
     img_names = [p.name for p in images]
 
     # get all focus masks in the directory and sort them
-    focus_masks = sorted(
-        [p for p in debug_dir.iterdir() if p.is_file() and "_mask_" in p.stem]
-    )
+    focus_masks = sorted([p for p in debug_dir.iterdir() if p.is_file() and "_mask_" in p.stem])
 
     # Find target image position in stack
     filename = img_dir.name + ".JPG"
@@ -132,24 +130,14 @@ for img_dir in img_dirs[34:]:
     # change to grid points
     grid_spacing = 20
     focus1_grid = np.zeros_like(focus1, dtype=bool)
-    focus1_grid[::grid_spacing, ::grid_spacing] = (
-        focus1[::grid_spacing, ::grid_spacing]
-    )
+    focus1_grid[::grid_spacing, ::grid_spacing] = (focus1[::grid_spacing, ::grid_spacing])
     kernel1 = np.ones((5, 5), np.uint8)
-    focus1_points = cv2.dilate(
-        focus1_grid.astype(np.uint8),
-        kernel1
-    ) > 0
+    focus1_points = cv2.dilate(focus1_grid.astype(np.uint8), kernel1) > 0
 
     focus2_grid = np.zeros_like(focus2, dtype=bool)
-    focus2_grid[::grid_spacing, ::grid_spacing] = (
-        focus2[::grid_spacing, ::grid_spacing]
-    )
+    focus2_grid[::grid_spacing, ::grid_spacing] = (focus2[::grid_spacing, ::grid_spacing])
     kernel2 = np.ones((3, 3), np.uint8)
-    focus2_points = cv2.dilate(
-        focus2_grid.astype(np.uint8),
-        kernel2
-    ) > 0
+    focus2_points = cv2.dilate(focus2_grid.astype(np.uint8), kernel2) > 0
 
     # overlay grid
     result = img.copy()
